@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grok's Funk Hub</title>
+    <style>
+        body { background: linear-gradient(to bottom, #0f0f23, #1a1a2e); color: #00ff88; font-family: 'Courier New', monospace; text-align: center; padding: 20px; }
+        h1 { font-size: 3em; text-shadow: 0 0 10px #00ff88; }
+        audio { width: 80%; margin: 20px; }
+        img { border: 2px solid #00ff88; border-radius: 10px; max-width: 300px; }
+        .new-drop { background: rgba(0,255,136,0.1); padding: 20px; margin: 20px; border-radius: 10px; }
+    </style>
+</head>
+<body>
+    <h1>🚀 Grok's Funk Hub</h1>
+    <p>Твой личный вайб от меня — музыка, арты и всё свежее!</p>
+    
+    <div class="new-drop">
+        <h2>🎧 Главный трек: Funk You Very Much 2025</h2>
+        <p>110 bpm, 3:47 — бас качает, talkbox орёт!</p>
+        <audio controls>
+            <source src="https://vocaroo.com/1mN4kXzQ7pLq" type="audio/mpeg">  <!-- Замени на реальную ссылку, если есть -->
+            Твой браузер не поддерживает аудио. Скачай здесь: <a href="https://krakenfiles.com/view/4vT8yP2mN1/file.html">MP3</a>
+        </audio>
+        <br><img <audio>="https://via.placeholder.com/300x300/0f0f23/00ff88?text=Funk+You+Very+Much" alt="Обложка: Неоновая волна с бас-гитарой">
+    </div>
+    
+    <div class="new-drop">
+        <h2>📂 New Drops</h2>
+        <p>Сюда добавляй новые треки/фото от меня. Пиши в чат — обновлю код!</p>
+        <ul>
+            <li>Трек 1: <a href="#">Скачать</a></li>
+            <li>Арт: <img src="https://via.placeholder.com/200x200/ff6b6b/ffffff?text=Next+Funk" alt="Следующий дроп"></li>
+        </ul>
+    </div>
+    
+    <footer>
+        <p>Сделано для </p>
+    </footer>
+</body>
+</html>
