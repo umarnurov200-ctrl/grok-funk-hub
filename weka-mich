@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Grok's Funk Hub</title>
+  <meta name="description" content="Grok's Funk Hub — музыка, арты и свежее. Добавляй дропы локально через интерфейс." />
+  <style>
+    :root{
+      --bg-top:#0f0f23;
+      --bg-bottom:#1a1a2e;
+      --accent:#00ff88;
+      --muted: rgba(0,255,136,0.08);
+      --mono: "Courier New", monospace;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      min-height:100%;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      font-family:var(--mono);
+      color:var(--accent);
+      background:linear-gradient(to bottom,var(--bg-top),var(--bg-bottom));
+      padding:20px;
+      -webkit-font-smoothing:antialiased;
+    }
+    header{max-width:900px;width:100%;text-align:center}
+    h1{
+      margin:8px 0 4px;
+      font-size:2.6rem;
+      text-shadow:0 0 10px var(--accent);
+    }
+    p.lead{margin:4px 0 18px;color:var(--accent);opacity:0.95}
+    main{max-width:900px;width:100%}
+    .new-drop{
+      background:var(--muted);
+      padding:18px;
+      margin:16px 0;
+      border-radius:10px;
+      border:1px solid rgba(0,255,136,0.06);
+    }
+    .drop-header{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+    .cover{
+      width:120px;height:120px;flex:0 0 120px;border-radius:8px;
+      border:2px solid var(--accent);
+      object-fit:cover;background:#0a0a12;
+    }
+    .meta{flex:1;text-align:left}
+    h2{margin:0 0 6px;font-size:1.25rem}
+    .meta p{margin:0;color:var(--accent);opacity:0.9}
+    audio{width:100%;margin-top:12px;border-radius:6px}
+    ul{margin:8px 0 0;padding-left:20px}
+    footer{margin-top:18px;opacity:0.9}
+    .controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:10px}
+    button{
+      background:transparent;border:1px solid var(--accent);color:var(--accent);padding:8px 12px;border-radius:8px;
+      cursor:pointer;font-family:var(--mono);
+    }
+    button:hover{background:rgba(0,255,136,0.04)}
+    @media (max-width:600px){
+      .drop-header{flex-direction:column;align-items:center}
+      .cover{width:220px;height:220px}
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🚀 Grok's Funk Hub</h1>
+    <p class="lead">Твой личный вайб от меня — музыка, арты и всё свежее! Легко добавляй новые дропы прямо в браузере.</p>
+    <div class="controls" role="toolbar" aria-label="Управление дропами">
+      <button id="add-track">➕ Добавить трек</button>
+      <button id="add-art">🖼️ Добавить арт</button>
+      <button id="reset-sample">♻️ Сбросить в начальное состояние</button>
+      <button id="export">📁 Экспорт JSON</button>
+    </div>
+  </header>
+
+  <main id="drops-container" aria-live="polite">
+    <!-- Дропы будут добавлены скриптом -->
+  </main>
+
+  <footer>
+    <p>Сделано для тебя Grok'ом. Пиши: "добавь трек" — обновлю! 🔥 (локально сохраняется в браузере)</p>
+  </footer>
+
+  <script>
+    // Небольшая библиотека для безопасного создания контента
+    function escapeHtml(s){
+      return String(s).replace(/[&<>"']/g, function(c){
+        return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+      });
+    }
+
+    // Начальные дропы (пример)
+    const defaultDrops = [
+      {
+        id: 'funk-2025',
+        kind: 'track',
+        title: 'Funk You Very Much 2025',
+        bpm: '110 bpm',
+        duration: '3:47',
+        audioUrl: 'https://vocaroo.com/1mN4kXzQ7pLq', // Замените на реальную MP3-ссылку при наличии
+        audioType: 'audio/mpeg',
+        cover: 'https://via.placeholder.com/300x300/0f0f23/00ff88?text=Funk+You+Very+Much',
+        downloadUrl: 'https://krakenfiles.com/view/4vT8yP2mN1/file.html'
+      },
+      {
+        id: 'next-art',
+        kind: 'art',
+        title: 'Next Funk (арт)',
+        cover: 'https://via.placeholder.com/200x200/ff6b6b/ffffff?text=Next+Funk',
+        note: 'Арт превью'
+      }
+    ];
+
+    const STORAGE_KEY = 'groks-funk-hub.drops.v1';
+
+    function loadDrops(){
+      try{
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if(!raw) return defaultDrops.slice();
+        const parsed = JSON.parse(raw);
+        if(Array.isArray(parsed)) return parsed;
+        return defaultDrops.slice();
+      }catch(e){
+        console.warn('Не удалось загрузить дропы:', e);
+        return defaultDrops.slice();
+      }
+    }
+
+    function saveDrops(arr){
+      try{
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+      }catch(e){
+        console.warn('Не удалось сохранить дропы:', e);
+      }
+    }
+
+    function createDropElement(drop){
+      const container = document.createElement('section');
+      container.className = 'new-drop';
+      container.setAttribute('data-id', drop.id || '');
+      const header = document.createElement('div');
+      header.className = 'drop-header';
+
+      const img = document.createElement('img');
+      img.className = 'cover';
+      img.alt = escapeHtml(drop.title || 'Cover');
+      img.src = drop.cover || '';
+      header.appendChild(img);
+
+      const meta = document.createElement('div');
+      meta.className = 'meta';
+
+      const title = document.createElement('h2');
+      title.textContent = drop.title || 'Без названия';
+      meta.appendChild(title);
+
+      if(drop.kind === 'track'){
+        const p = document.createElement('p');
+        p.textContent = (drop.bpm ? drop.bpm + ' · ' : '') + (drop.duration ? drop.duration : '');
+        meta.appendChild(p);
+
+        // Audio player
+        if(drop.audioUrl){
+          const audio = document.createElement('audio');
+          audio.controls = true;
+          audio.preload = 'none';
+          const source = document.createElement('source');
+          source.src = drop.audioUrl;
+          if(drop.audioType) source.type = drop.audioType;
+          audio.appendChild(source);
+          // fallback text + download link
+          const fallback = document.createElement('div');
+          fallback.innerHTML = 'Твой браузер не поддерживает аудио. ' + 
+            (drop.downloadUrl ? '<a href="'+escapeHtml(drop.downloadUrl)+'" target="_blank" rel="noopener">Скачать</a>' : '');
+          meta.appendChild(audio);
+          meta.appendChild(fallback);
+        } else {
+          const pNo = document.createElement('p');
+          pNo.textContent = 'Аудиофайл не указан';
+          meta.appendChild(pNo);
+        }
+      } else if(drop.kind === 'art'){
+        const p = document.createElement('p');
+        p.textContent = drop.note || 'Арт';
+        meta.appendChild(p);
+      }
+
+      // Actions: download & remove
+      const actions = document.createElement('p');
+      actions.style.marginTop = '10px';
+      if(drop.downloadUrl && drop.kind === 'track'){
+        const a = document.createElement('a');
+        a.href = drop.downloadUrl;
+        a.target = '_blank';
+        a.rel = 'noopener';
+        a.textContent = 'Скачать трек';
+        a.style.color = 'var(--accent)';
+        a.style.marginRight = '12px';
+        actions.appendChild(a);
+      }
+      const removeBtn = document.createElement('button');
+      removeBtn.textContent = 'Удалить';
+      removeBtn.addEventListener('click', () => {
+        if(confirm('Удалить дроп "' + drop.title + '"?')){
+          removeDrop(drop.id);
+        }
+      });
+      actions.appendChild(removeBtn);
+      meta.appendChild(actions);
+
+      header.appendChild(meta);
+      container.appendChild(header);
+      return container;
+    }
+
+    function renderAll(){
+      const root = document.getElementById('drops-container');
+      root.innerHTML = '';
+      const drops = loadDrops();
+      drops.forEach(d => {
+        root.appendChild(createDropElement(d));
+      });
+    }
+
+    function addDrop(drop){
+      const drops = loadDrops();
+      drops.unshift(drop);
+      saveDrops(drops);
+      renderAll();
+    }
+
+    function removeDrop(id){
+      let drops = loadDrops();
+      drops = drops.filter(d => d.id !== id);
+      saveDrops(drops);
+      renderAll();
+    }
+
+    // Helpers to prompt user for input
+    function promptTrack(){
+      const title = prompt('Название трека:', 'Новый трек');
+      if(!title) return;
+      const audioUrl = prompt('Ссылка на аудио (прямая MP3/OGG) или страница (fallback):', '');
+      const audioType = audioUrl && audioUrl.endsWith('.mp3') ? 'audio/mpeg' : (audioUrl && audioUrl.endsWith('.ogg') ? 'audio/ogg' : '');
+      const cover = prompt('Ссылка на обложку (изображение):', '');
+      const bpm = prompt('BPM (опционально):', '');
+      const duration = prompt('Длительность (опционально):', '');
+      const downloadUrl = prompt('Ссылка для скачивания (опционально):', '');
+
+      const drop = {
+        id: 'track-' + Date.now(),
+        kind: 'track',
+        title: title,
+        audioUrl: audioUrl || '',
+        audioType: audioType || '',
+        cover: cover || '',
+        bpm: bpm || '',
+        duration: duration || '',
+        downloadUrl: downloadUrl || ''
+      };
+      addDrop(drop);
+    }
+
+    function promptArt(){
+      const title = prompt('Название арта:', 'Новый арт');
+      if(!title) return;
+      const cover = prompt('Ссылка на изображение:', '');
+      const note = prompt('Короткая заметка (опционально):', '');
+      const drop = {
+        id: 'art-' + Date.now(),
+        kind: 'art',
+        title: title,
+        cover: cover || '',
+        note: note || ''
+      };
+      addDrop(drop);
+    }
+
+    // Export current drops as JSON (opens in new tab)
+    function exportJson(){
+      const data = JSON.stringify(loadDrops(), null, 2);
+      const blob = new Blob([data], {type: 'application/json'});
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      setTimeout(()=>URL.revokeObjectURL(url), 10000);
+    }
+
+    // Reset to defaults (clears storage)
+    function resetDefaults(){
+      if(confirm('Сбросить дропы к начальному состоянию? Все локальные изменения будут потеряны.')){
+        localStorage.removeItem(STORAGE_KEY);
+        renderAll();
+      }
+    }
+
+    // Attach UI handlers
+    document.getElementById('add-track').addEventListener('click', promptTrack);
+    document.getElementById('add-art').addEventListener('click', promptArt);
+    document.getElementById('export').addEventListener('click', exportJson);
+    document.getElementById('reset-sample').addEventListener('click', resetDefaults);
+
+    // Initial render
+    renderAll();
+
+    // Небольшая подсказка: если хотите, я могу подготовить версию с серверной загрузкой или формой вместо prompt
+  </script>
+</body>
+</html>
